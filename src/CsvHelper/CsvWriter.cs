@@ -359,7 +359,7 @@ namespace CsvHelper
 		/// Writes the header record for the given dynamic object.
 		/// </summary>
 		/// <param name="record">The dynamic record to write.</param>
-		public virtual void WriteDynamicHeader( object record )
+		public virtual void WriteDynamicHeader( IDynamicMetaObjectProvider record )
 		{
 			CheckDisposed();
 
@@ -406,6 +406,22 @@ namespace CsvHelper
 		public virtual void WriteRecord<T>( T record )
 		{
 			CheckDisposed();
+
+#if !NET_2_0 && !NET_3_5 && !PCL
+			var dynamicRecord = record as IDynamicMetaObjectProvider;
+			if( dynamicRecord != null )
+			{
+				if( configuration.HasHeaderRecord && !hasHeaderBeenWritten )
+				{
+					WriteDynamicHeader( dynamicRecord );
+				}
+
+				if( !typeActions.ContainsKey( dynamicRecord.GetType() ) )
+				{
+					CreateActionForDynamic( dynamicRecord );
+				}
+			}
+#endif
 
 			try
 			{
@@ -455,16 +471,17 @@ namespace CsvHelper
 					recordType = record.GetType();
 
 #if !NET_2_0 && !NET_3_5 && !PCL
-					if( typeof( IDynamicMetaObjectProvider ).IsAssignableFrom( recordType ) )
+					var dynamicObject = record as IDynamicMetaObjectProvider;
+					if( dynamicObject != null )
 					{
 						if( configuration.HasHeaderRecord && !hasHeaderBeenWritten )
 						{
-							WriteDynamicHeader( record );
+							WriteDynamicHeader( dynamicObject );
 						}
 
 						if( !typeActions.ContainsKey( recordType ) )
 						{
-							CreateActionForDynamic( (IDynamicMetaObjectProvider)record );
+							CreateActionForDynamic( dynamicObject );
 						}
 					}
 					else
