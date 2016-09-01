@@ -828,7 +828,7 @@ namespace CsvHelper.Tests
 				row = parser.Read();
 
 				Assert.AreEqual( 2, parser.Row );
-				Assert.IsNull( row[0] );
+				Assert.AreEqual( 0, row.Length );
 
 				row = parser.Read();
 

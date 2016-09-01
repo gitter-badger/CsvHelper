@@ -38,6 +38,12 @@ namespace CsvHelper
 		int Row { get; }
 
 		/// <summary>
+		/// Gets the row of the CSV file that the parser is currently on.
+		/// This is the actual file row.
+		/// </summary>
+		int RawRow { get; }
+
+		/// <summary>
 		/// Gets the raw row for the current record that was parsed.
 		/// </summary>
 		string RawRecord { get; }
