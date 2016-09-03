@@ -60,6 +60,8 @@ namespace CsvHelper
 					ReadExcelSeparator();
 				}
 
+				reader.ClearRawRecord();
+
 				var row = ReadLine();
 
 				return row;
@@ -215,10 +217,10 @@ namespace CsvHelper
 				if( c == Configuration.Delimiter[0] )
 				{
 					// End of field.
-					// Set the end of the field to the char before the delimiter.
-					reader.SetFieldEnd( -1 );
 					if( ReadDelimiter() )
 					{
+						// Set the end of the field to the char before the delimiter.
+						reader.SetFieldEnd( -1 );
 						record.Add( reader.GetField() );
 						return false;
 					}
@@ -227,11 +229,9 @@ namespace CsvHelper
 				{
 					// End of line.
 					reader.SetFieldEnd( -1 );
+					var offset = ReadLineEnding();
 					record.Add( reader.GetField() );
-					if( ReadLineEnding() )
-					{
-						reader.SetFieldStart();
-					}
+					reader.SetFieldStart( offset );
 					return true;
 				}
 				else if( c == -1 )
@@ -301,17 +301,17 @@ namespace CsvHelper
 						if( ReadDelimiter() )
 						{
 							// Add an extra offset because of the end quote.
+							reader.SetFieldEnd( -1 );
 							record.Add( reader.GetField() );
 							return false;
 						}
 					}
 					else if( c == '\r' || c == '\n' )
 					{
+						reader.SetFieldEnd( -1 );
+						var offset = ReadLineEnding();
 						record.Add( reader.GetField() );
-						if( ReadLineEnding() )
-						{
-							reader.SetFieldStart();
-						}
+						reader.SetFieldStart( offset );
 						return true;
 					}
 					else if( cPrev == Configuration.Quote )
@@ -357,20 +357,22 @@ namespace CsvHelper
 		/// Reads until the line ending is done.
 		/// </summary>
 		/// <returns>True if more chars were read, otherwise false.</returns>
-	    protected virtual bool ReadLineEnding()
+	    protected virtual int ReadLineEnding()
 		{
+			var fieldStartOffset = 0;
 			// TODO: Returning the bool might be pointless now. Check on this.
 		    if( c == '\r' )
 		    {
 				c = reader.GetChar();
-				if( c == '\n' )
-			    {
-					return true;
+				if( c != '\n' )
+				{
+					// The start needs to be moved back.
+					fieldStartOffset--;
 			    }
 		    }
 
-			return false;
-	    }
+			return fieldStartOffset;
+		}
 
 		/// <summary>
 		/// Reads the Excel seperator and sets it to the delimiter.

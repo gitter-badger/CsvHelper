@@ -40,15 +40,25 @@ namespace CsvHelper
 
 		    if( bufferPosition >= charsRead )
 		    {
-			    charsRead = Reader.Read( Buffer, 0, Buffer.Length );
+				RawRecord += new string( Buffer, rawRecordStartPosition, bufferPosition - rawRecordStartPosition );
+				rawRecordStartPosition = 0;
+
+			    if( fieldEndPosition <= fieldStartPosition )
+			    {
+					// If the end position hasn't been set yet, use the buffer position instead.
+				    fieldEndPosition = bufferPosition;
+			    }
+
+				field += new string( Buffer, fieldStartPosition, fieldEndPosition - fieldStartPosition );
+				bufferPosition = 0;
+				fieldStartPosition = 0;
+			    fieldEndPosition = 0;
+
+				charsRead = Reader.Read( Buffer, 0, Buffer.Length );
 			    if( charsRead == 0 )
 			    {
 				    return -1;
 			    }
-
-				field += new string( Buffer, fieldStartPosition, bufferPosition - fieldStartPosition );
-				bufferPosition = 0;
-			    fieldStartPosition = 0;
 		    }
 
 		    var c = Buffer[bufferPosition];
@@ -82,7 +92,7 @@ namespace CsvHelper
 			var length = fieldEndPosition - fieldStartPosition;
 			field += new string( Buffer, fieldStartPosition, length );
 			fieldStartPosition = bufferPosition;
-		    fieldEndPosition = bufferPosition;
+		    fieldEndPosition = 0;
 	    }
 
 		public virtual void SetFieldStart( int offset = 0 )
@@ -94,6 +104,11 @@ namespace CsvHelper
 	    {
 		    fieldEndPosition = bufferPosition + offset;
 	    }
+
+	    public virtual void ClearRawRecord()
+	    {
+			RawRecord = string.Empty;
+		}
 
 		/// <summary>
 		/// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
