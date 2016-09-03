@@ -45,9 +45,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\CsvHelper\CharReader.cs">
-      <Link>CharReader.cs</Link>
-    </Compile>
     <Compile Include="..\CsvHelper\Configuration\CsvClassMap.cs">
       <Link>Configuration\CsvClassMap.cs</Link>
     </Compile>
@@ -131,6 +128,9 @@
     </Compile>
     <Compile Include="..\CsvHelper\ExceptionHelper.cs">
       <Link>ExceptionHelper.cs</Link>
+    </Compile>
+    <Compile Include="..\CsvHelper\FieldReader.cs">
+      <Link>FieldReader.cs</Link>
     </Compile>
     <Compile Include="..\CsvHelper\ICsvFactory.cs">
       <Link>ICsvFactory.cs</Link>

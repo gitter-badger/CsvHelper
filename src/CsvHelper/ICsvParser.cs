@@ -18,11 +18,6 @@ namespace CsvHelper
 		CsvConfiguration Configuration { get; }
 
 		/// <summary>
-		/// Gets the field count.
-		/// </summary>
-		int FieldCount { get; }
-
-		/// <summary>
 		/// Gets the character position that the parser is currently on.
 		/// </summary>
 		long CharPosition { get; }

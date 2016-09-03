@@ -10,11 +10,12 @@ namespace CsvHelper
     public class CsvParser : ICsvParser
     {
 		private readonly RecordBuilder record = new RecordBuilder();
-		private CharReader reader;
+		private FieldReader reader;
 		private bool disposed;
 	    private int currentRow;
 	    private int currentRawRow;
-	    private char c = '\0';
+	    private int c = -1;
+	    private bool hasExcelSeparatorBeenRead;
 
 		public virtual CsvConfiguration Configuration { get; }
 
@@ -22,13 +23,13 @@ namespace CsvHelper
 
 	    public virtual long CharPosition => reader.CharPosition;
 
-		public virtual long BytePosition { get; }
+	    public virtual long BytePosition => reader.BytePosition;
 
 		public virtual int Row => currentRow;
 
 		public virtual int RawRow => currentRawRow;
 
-	    public virtual string RawRecord { get; protected set; }
+	    public virtual string RawRecord => reader.RawRecord;
 
 	    public CsvParser( TextReader reader ) : this( reader, new CsvConfiguration() ) { }
 
@@ -44,7 +45,7 @@ namespace CsvHelper
 			    throw new ArgumentNullException( nameof( configuration ) );
 		    }
 
-		    this.reader = new CharReader( reader, configuration.BufferSize );
+		    this.reader = new FieldReader( reader, configuration );
 		    Configuration = configuration;
 	    }
 
@@ -54,6 +55,11 @@ namespace CsvHelper
 
 			try
 			{
+				if( Configuration.HasExcelSeparator && !hasExcelSeparatorBeenRead )
+				{
+					ReadExcelSeparator();
+				}
+
 				var row = ReadLine();
 
 				return row;
@@ -113,18 +119,16 @@ namespace CsvHelper
 	    protected virtual string[] ReadLine()
 	    {
 		    record.Clear();
-			RawRecord = string.Empty;
 		    currentRow++;
 		    currentRawRow++;
 
 			while( true )
 			{
-				reader.GetChar( out c );
+				c = reader.GetChar();
 
-			    if( c == '\0' )
+			    if( c == -1 )
 			    {
 					// We have reached the end of the file.
-
 					if( record.Length > 0 )
 				    {
 						// There was no line break at the end of the file.
@@ -147,7 +151,7 @@ namespace CsvHelper
 				    continue;
 			    }
 
-				if( c == Configuration.Quote )
+				if( c == Configuration.Quote && !Configuration.IgnoreQuotes )
 			    {
 				    if( ReadQuotedField() )
 				    {
@@ -182,11 +186,16 @@ namespace CsvHelper
 			    if( c == '\r' || c == '\n' )
 			    {
 				    ReadLineEnding();
-					reader.GetField();
+				    reader.SetFieldStart();
 					return;
 			    }
 
-				reader.GetChar( out c );
+			    if( c == -1 )
+			    {
+				    return;
+			    }
+
+				c = reader.GetChar();
 		    }
 	    }
 
@@ -198,7 +207,7 @@ namespace CsvHelper
 		{
 			if( c != Configuration.Delimiter[0] && c != '\r' && c != '\n' )
 			{
-				reader.GetChar( out c );
+				c = reader.GetChar();
 			}
 
 			while( true )
@@ -206,46 +215,54 @@ namespace CsvHelper
 				if( c == Configuration.Delimiter[0] )
 				{
 					// End of field.
+					// Set the end of the field to the char before the delimiter.
+					reader.SetFieldEnd( -1 );
 					if( ReadDelimiter() )
 					{
-						record.Add( reader.GetField( Configuration.Delimiter.Length ) );
+						record.Add( reader.GetField() );
 						return false;
 					}
 				}
 				else if( c == '\r' || c == '\n' )
 				{
 					// End of line.
-					record.Add( reader.GetField( 1 ) );
+					reader.SetFieldEnd( -1 );
+					record.Add( reader.GetField() );
 					if( ReadLineEnding() )
 					{
 						reader.SetFieldStart();
 					}
 					return true;
 				}
-				else if( c == '\0' )
+				else if( c == -1 )
 				{
 					// End of file.
+					reader.SetFieldEnd();
 					record.Add( reader.GetField() );
 					return true;
 				}
 
-				reader.GetChar( out c );
+				c = reader.GetChar();
 			}
 		}
 
 		/// <summary>
 		/// Reads until the field is not quoted and a delimeter is found.
 		/// </summary>
-	    protected virtual bool ReadQuotedField()
+		/// <returns>True if the end of the line was found, otherwise false.</returns>
+		protected virtual bool ReadQuotedField()
 		{
 			var inQuotes = true;
+			// Set the start of the field to after the quote.
 			reader.SetFieldStart();
+			int cPrev;
 
 			while( true )
 			{
-				// "a""b"
+				// 1,"2" ,3
 
-				reader.GetChar( out c );
+				cPrev = c;
+				c = reader.GetChar();
 				if( c == Configuration.Quote )
 				{
 					inQuotes = !inQuotes;
@@ -253,16 +270,28 @@ namespace CsvHelper
 					if( !inQuotes )
 					{
 						// Add an offset for the quote.
-						reader.AppendField( 1 );
+						reader.SetFieldEnd( -1 );
+						reader.AppendField();
+						reader.SetFieldStart();
 					}
 
 					continue;
 				}
 
-				if( inQuotes && ( c == '\r' || c == '\n' ) )
+				if( inQuotes )
 				{
-					ReadLineEnding();
-					currentRawRow++;
+					if( c == '\r' || c == '\n' )
+					{
+						ReadLineEnding();
+						currentRawRow++;
+					}
+
+					if( c == -1 )
+					{
+						reader.SetFieldEnd();
+						record.Add( reader.GetField() );
+						return true;
+					}
 				}
 
 				if( !inQuotes )
@@ -272,18 +301,24 @@ namespace CsvHelper
 						if( ReadDelimiter() )
 						{
 							// Add an extra offset because of the end quote.
-							record.Add( reader.GetField( Configuration.Delimiter.Length ) );
+							record.Add( reader.GetField() );
 							return false;
 						}
 					}
 					else if( c == '\r' || c == '\n' )
 					{
-						record.Add( reader.GetField( 1 ) );
+						record.Add( reader.GetField() );
 						if( ReadLineEnding() )
 						{
 							reader.SetFieldStart();
 						}
 						return true;
+					}
+					else if( cPrev == Configuration.Quote )
+					{
+						// We're out of quotes. Read the reset of
+						// the field like a normal field.
+						return ReadField();
 					}
 				}
 			}
@@ -308,7 +343,7 @@ namespace CsvHelper
 
 			for( var i = 1; i < Configuration.Delimiter.Length; i++ )
 			{
-				reader.GetChar( out c );
+				c = reader.GetChar();
 				if( c != Configuration.Delimiter[i] )
 				{
 					return false;
@@ -324,10 +359,11 @@ namespace CsvHelper
 		/// <returns>True if more chars were read, otherwise false.</returns>
 	    protected virtual bool ReadLineEnding()
 		{
+			// TODO: Returning the bool might be pointless now. Check on this.
 		    if( c == '\r' )
 		    {
-			    reader.GetChar( out c );
-			    if( c == '\n' )
+				c = reader.GetChar();
+				if( c == '\n' )
 			    {
 					return true;
 			    }
@@ -335,5 +371,20 @@ namespace CsvHelper
 
 			return false;
 	    }
+
+		/// <summary>
+		/// Reads the Excel seperator and sets it to the delimiter.
+		/// </summary>
+		protected virtual void ReadExcelSeparator()
+		{
+			// sep=delimiter
+			var sepLine = reader.Reader.ReadLine();
+			if( sepLine != null )
+			{
+				Configuration.Delimiter = sepLine.Substring( 4 );
+			}
+
+			hasExcelSeparatorBeenRead = true;
+		}
 	}
 }
