@@ -40,6 +40,11 @@ namespace CsvHelper
 
 		    if( bufferPosition >= charsRead )
 		    {
+				if( Configuration.CountBytes )
+				{
+					BytePosition += Configuration.Encoding.GetByteCount( Buffer, rawRecordStartPosition, bufferPosition - rawRecordStartPosition );
+				}
+
 				RawRecord += new string( Buffer, rawRecordStartPosition, bufferPosition - rawRecordStartPosition );
 				rawRecordStartPosition = 0;
 
@@ -83,7 +88,7 @@ namespace CsvHelper
 	    {
 			if( Configuration.CountBytes )
 			{
-				BytePosition += Configuration.Encoding.GetByteCount( Buffer, fieldStartPosition, bufferPosition - fieldStartPosition );
+				BytePosition += Configuration.Encoding.GetByteCount( Buffer, rawRecordStartPosition, bufferPosition - rawRecordStartPosition );
 			}
 
 		    RawRecord += new string( Buffer, rawRecordStartPosition, bufferPosition - rawRecordStartPosition );
