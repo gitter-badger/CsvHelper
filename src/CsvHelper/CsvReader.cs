@@ -293,9 +293,9 @@ namespace CsvHelper
 
 			if( index >= currentRecord.Length )
 			{
-				if( configuration.WillThrowOnMissingField )
+				if( configuration.WillThrowOnMissingField && configuration.IgnoreBlankLines )
 				{
-					var ex = new CsvMissingFieldException( string.Format( "Field at index '{0}' does not exist.", index ) );
+					var ex = new CsvMissingFieldException( $"Field at index '{index}' does not exist." );
 					ExceptionHelper.AddExceptionDataMessage( ex, Parser, typeof( string ), namedIndexes, index, currentRecord );
 					throw ex;
 				}
