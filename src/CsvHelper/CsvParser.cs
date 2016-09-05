@@ -239,6 +239,11 @@ namespace CsvHelper
 
 			while( true )
 			{
+				if( c == Configuration.Quote )
+				{
+					reader.IsFieldBad = true;
+				}
+
 				if( c == Configuration.Delimiter[0] )
 				{
 					reader.SetFieldEnd( -1 );

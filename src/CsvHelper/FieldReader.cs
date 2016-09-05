@@ -7,6 +7,7 @@ namespace CsvHelper
 {
     public class FieldReader : IDisposable
     {
+	    private char[] buffer;
 	    private string field = string.Empty;
 	    private int bufferPosition;
 	    private int fieldStartPosition;
@@ -20,18 +21,18 @@ namespace CsvHelper
 
 		public long BytePosition { get; protected set; }
 
-	    public char[] Buffer { get; }
-
 		public string RawRecord { get; private set; }
 
 	    public TextReader Reader { get; private set; }
 
 	    public CsvConfiguration Configuration { get; }
 
+		public bool IsFieldBad { get; set; }
+
 	    public FieldReader( TextReader reader, CsvConfiguration configuration )
 	    {
 			Reader = reader;
-		    Buffer = new char[configuration.BufferSize];
+		    buffer = new char[configuration.BufferSize];
 		    Configuration = configuration;
 	    }
 
@@ -43,10 +44,10 @@ namespace CsvHelper
 		    {
 				if( Configuration.CountBytes )
 				{
-					BytePosition += Configuration.Encoding.GetByteCount( Buffer, rawRecordStartPosition, rawRecordEndPosition - rawRecordStartPosition );
+					BytePosition += Configuration.Encoding.GetByteCount( buffer, rawRecordStartPosition, rawRecordEndPosition - rawRecordStartPosition );
 				}
 
-				RawRecord += new string( Buffer, rawRecordStartPosition, bufferPosition - rawRecordStartPosition );
+				RawRecord += new string( buffer, rawRecordStartPosition, bufferPosition - rawRecordStartPosition );
 				rawRecordStartPosition = 0;
 
 			    if( fieldEndPosition <= fieldStartPosition )
@@ -55,20 +56,20 @@ namespace CsvHelper
 				    fieldEndPosition = bufferPosition;
 			    }
 
-				field += new string( Buffer, fieldStartPosition, fieldEndPosition - fieldStartPosition );
+				field += new string( buffer, fieldStartPosition, fieldEndPosition - fieldStartPosition );
 				bufferPosition = 0;
 			    rawRecordEndPosition = 0;
 				fieldStartPosition = 0;
 			    fieldEndPosition = 0;
 
-				charsRead = Reader.Read( Buffer, 0, Buffer.Length );
+				charsRead = Reader.Read( buffer, 0, buffer.Length );
 			    if( charsRead == 0 )
 			    {
 				    return -1;
 			    }
 		    }
 
-		    var c = Buffer[bufferPosition];
+		    var c = buffer[bufferPosition];
 		    bufferPosition++;
 		    rawRecordEndPosition = bufferPosition;
 
@@ -81,7 +82,19 @@ namespace CsvHelper
 	    {
 		    AppendField();
 
-		    var result = field;
+			if( IsFieldBad && Configuration.ThrowOnBadData )
+			{
+				throw new CsvBadDataException( $"Field: '{field}'" );
+			}
+
+			if( IsFieldBad && Configuration.BadDataCallback != null )
+			{
+				Configuration.BadDataCallback( field );
+			}
+
+			IsFieldBad = false;
+
+			var result = field;
 		    field = string.Empty;
 
 		    return result;
@@ -91,14 +104,14 @@ namespace CsvHelper
 	    {
 			if( Configuration.CountBytes )
 			{
-				BytePosition += Configuration.Encoding.GetByteCount( Buffer, rawRecordStartPosition, bufferPosition - rawRecordStartPosition );
+				BytePosition += Configuration.Encoding.GetByteCount( buffer, rawRecordStartPosition, bufferPosition - rawRecordStartPosition );
 			}
 
-		    RawRecord += new string( Buffer, rawRecordStartPosition, rawRecordEndPosition - rawRecordStartPosition );
+		    RawRecord += new string( buffer, rawRecordStartPosition, rawRecordEndPosition - rawRecordStartPosition );
 		    rawRecordStartPosition = rawRecordEndPosition;
 
 			var length = fieldEndPosition - fieldStartPosition;
-			field += new string( Buffer, fieldStartPosition, length );
+			field += new string( buffer, fieldStartPosition, length );
 			fieldStartPosition = bufferPosition;
 		    fieldEndPosition = 0;
 	    }
