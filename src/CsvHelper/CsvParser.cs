@@ -256,8 +256,11 @@ namespace CsvHelper
 					// End of line.
 					reader.SetFieldEnd( -1 );
 					var offset = ReadLineEnding();
+					reader.SetRawRecordEnd( offset );
 					record.Add( reader.GetField() );
+
 					reader.SetFieldStart( offset );
+
 					return true;
 				}
 				else if( c == -1 )
@@ -337,6 +340,7 @@ namespace CsvHelper
 					{
 						reader.SetFieldEnd( -1 );
 						var offset = ReadLineEnding();
+						reader.SetRawRecordEnd( offset );
 						record.Add( reader.GetField() );
 						reader.SetFieldStart( offset );
 						return true;

@@ -12,6 +12,7 @@ namespace CsvHelper
 	    private int fieldStartPosition;
 	    private int fieldEndPosition;
 	    private int rawRecordStartPosition;
+	    private int rawRecordEndPosition;
 	    private int charsRead;
 	    private bool disposed;
 
@@ -42,7 +43,7 @@ namespace CsvHelper
 		    {
 				if( Configuration.CountBytes )
 				{
-					BytePosition += Configuration.Encoding.GetByteCount( Buffer, rawRecordStartPosition, bufferPosition - rawRecordStartPosition );
+					BytePosition += Configuration.Encoding.GetByteCount( Buffer, rawRecordStartPosition, rawRecordEndPosition - rawRecordStartPosition );
 				}
 
 				RawRecord += new string( Buffer, rawRecordStartPosition, bufferPosition - rawRecordStartPosition );
@@ -56,6 +57,7 @@ namespace CsvHelper
 
 				field += new string( Buffer, fieldStartPosition, fieldEndPosition - fieldStartPosition );
 				bufferPosition = 0;
+			    rawRecordEndPosition = 0;
 				fieldStartPosition = 0;
 			    fieldEndPosition = 0;
 
@@ -68,6 +70,7 @@ namespace CsvHelper
 
 		    var c = Buffer[bufferPosition];
 		    bufferPosition++;
+		    rawRecordEndPosition = bufferPosition;
 
 		    CharPosition++;
 
@@ -91,8 +94,8 @@ namespace CsvHelper
 				BytePosition += Configuration.Encoding.GetByteCount( Buffer, rawRecordStartPosition, bufferPosition - rawRecordStartPosition );
 			}
 
-		    RawRecord += new string( Buffer, rawRecordStartPosition, bufferPosition - rawRecordStartPosition );
-		    rawRecordStartPosition = bufferPosition;
+		    RawRecord += new string( Buffer, rawRecordStartPosition, rawRecordEndPosition - rawRecordStartPosition );
+		    rawRecordStartPosition = rawRecordEndPosition;
 
 			var length = fieldEndPosition - fieldStartPosition;
 			field += new string( Buffer, fieldStartPosition, length );
@@ -102,12 +105,29 @@ namespace CsvHelper
 
 		public virtual void SetFieldStart( int offset = 0 )
 	    {
-			fieldStartPosition = bufferPosition + offset;
+			var position = bufferPosition + offset;
+			if( position >= 0 )
+			{
+				fieldStartPosition = position;
+			}
 	    }
 
 	    public virtual void SetFieldEnd( int offset = 0 )
 	    {
-		    fieldEndPosition = bufferPosition + offset;
+		    var position = bufferPosition + offset;
+		    if( position >= 0 )
+		    {
+			    fieldEndPosition = position;
+		    }
+	    }
+
+	    public virtual void SetRawRecordEnd( int offset )
+	    {
+		    var position = bufferPosition + offset;
+		    if( position >= 0 )
+		    {
+				rawRecordEndPosition = position;
+			}
 	    }
 
 	    public virtual void ClearRawRecord()

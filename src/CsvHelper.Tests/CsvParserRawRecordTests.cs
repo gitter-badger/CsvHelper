@@ -58,7 +58,7 @@ namespace CsvHelper.Tests
 				Assert.AreEqual( "3,4\r", parser.RawRecord );
 
 				parser.Read();
-				Assert.AreEqual( null, parser.RawRecord );
+				Assert.AreEqual( string.Empty, parser.RawRecord );
 			}
 		}
 
