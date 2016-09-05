@@ -5,9 +5,12 @@ using CsvHelper.Configuration;
 
 namespace CsvHelper
 {
+	/// <summary>
+	/// Reads fields from a <see cref="TextReader"/>.
+	/// </summary>
     public class FieldReader : IDisposable
     {
-	    private char[] buffer;
+	    private readonly char[] buffer;
 	    private string field = string.Empty;
 	    private int bufferPosition;
 	    private int fieldStartPosition;
@@ -17,18 +20,44 @@ namespace CsvHelper
 	    private int charsRead;
 	    private bool disposed;
 
+		/// <summary>
+		/// Gets the character position.
+		/// </summary>
 		public long CharPosition { get; protected set; }
 
+		/// <summary>
+		/// Gets the byte position.
+		/// </summary>
 		public long BytePosition { get; protected set; }
 
+		/// <summary>
+		/// Gets all the characters of the record including
+		/// quotes, delimeters, and line endings.
+		/// </summary>
 		public string RawRecord { get; private set; }
 
+		/// <summary>
+		/// Gets the <see cref="TextReader"/> that is read from.
+		/// </summary>
 	    public TextReader Reader { get; private set; }
 
+		/// <summary>
+		/// Gets the configuration.
+		/// </summary>
 	    public CsvConfiguration Configuration { get; }
 
+		/// <summary>
+		/// Gets or sets a value indicating if the field is bad.
+		/// True if the field is bad, otherwise false.
+		/// </summary>
 		public bool IsFieldBad { get; set; }
 
+		/// <summary>
+		/// Creates a new <see cref="FieldReader"/> using the given
+		/// <see cref="TextReader"/> and <see cref="CsvConfiguration"/>.
+		/// </summary>
+		/// <param name="reader"></param>
+		/// <param name="configuration"></param>
 	    public FieldReader( TextReader reader, CsvConfiguration configuration )
 	    {
 			Reader = reader;
@@ -36,6 +65,10 @@ namespace CsvHelper
 		    Configuration = configuration;
 	    }
 
+		/// <summary>
+		/// Gets the next char as an <see cref="int"/>.
+		/// </summary>
+		/// <returns></returns>
 	    public virtual int GetChar()
 	    {
 		    CheckDisposed();
@@ -78,6 +111,10 @@ namespace CsvHelper
 		    return c;
 	    }
 
+		/// <summary>
+		/// Gets the field. This will append any reading progress.
+		/// </summary>
+		/// <returns>The current field.</returns>
 	    public virtual string GetField()
 	    {
 		    AppendField();
@@ -100,6 +137,9 @@ namespace CsvHelper
 		    return result;
 	    }
 
+		/// <summary>
+		/// Appends the current reading progress.
+		/// </summary>
 	    public virtual void AppendField()
 	    {
 			if( Configuration.CountBytes )
@@ -116,6 +156,11 @@ namespace CsvHelper
 		    fieldEndPosition = 0;
 	    }
 
+		/// <summary>
+		/// Sets the start of the field to the current buffer position.
+		/// </summary>
+		/// <param name="offset">An offset for the field start.
+		/// The offset should be less than 1.</param>
 		public virtual void SetFieldStart( int offset = 0 )
 	    {
 			var position = bufferPosition + offset;
@@ -125,6 +170,11 @@ namespace CsvHelper
 			}
 	    }
 
+		/// <summary>
+		/// Sets the end of the field to the current buffer position.
+		/// </summary>
+		/// <param name="offset">An offset for the field start.
+		/// The offset should be less than 1.</param>
 	    public virtual void SetFieldEnd( int offset = 0 )
 	    {
 		    var position = bufferPosition + offset;
@@ -134,7 +184,12 @@ namespace CsvHelper
 		    }
 	    }
 
-	    public virtual void SetRawRecordEnd( int offset )
+		/// <summary>
+		/// Sets the raw record end to the current buffer position.
+		/// </summary>
+		/// <param name="offset">An offset for the raw record end.
+		/// The offset should be less than 1.</param>
+		public virtual void SetRawRecordEnd( int offset )
 	    {
 		    var position = bufferPosition + offset;
 		    if( position >= 0 )
@@ -143,6 +198,9 @@ namespace CsvHelper
 			}
 	    }
 
+		/// <summary>
+		/// Clears the raw record.
+		/// </summary>
 	    public virtual void ClearRawRecord()
 	    {
 			RawRecord = string.Empty;

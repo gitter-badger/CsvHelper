@@ -7,7 +7,10 @@ using CsvHelper.Configuration;
 
 namespace CsvHelper
 {
-    public class CsvParser : ICsvParser
+	/// <summary>
+	/// Parses a CSV file.
+	/// </summary>
+	public class CsvParser : ICsvParser
     {
 		private readonly RecordBuilder record = new RecordBuilder();
 		private FieldReader reader;
@@ -18,23 +21,50 @@ namespace CsvHelper
 	    private bool hasExcelSeparatorBeenRead;
 	    private int columnCount;
 
-		public virtual CsvConfiguration Configuration { get; }
+	    /// <summary>
+	    /// Gets the configuration.
+	    /// </summary>
+	    public virtual CsvConfiguration Configuration { get; }
 
-	    public virtual int FieldCount { get; protected set; }
+		/// <summary>
+		/// Gets the character position that the parser is currently on.
+		/// </summary>
+		public virtual long CharPosition => reader.CharPosition;
 
-	    public virtual long CharPosition => reader.CharPosition;
+		/// <summary>
+		/// Gets the byte position that the parser is currently on.
+		/// </summary>
+		public virtual long BytePosition => reader.BytePosition;
 
-	    public virtual long BytePosition => reader.BytePosition;
+	    /// <summary>
+	    /// Gets the row of the CSV file that the parser is currently on.
+	    /// </summary>
+	    public virtual int Row => currentRow;
 
-		public virtual int Row => currentRow;
+	    /// <summary>
+	    /// Gets the row of the CSV file that the parser is currently on.
+	    /// This is the actual file row.
+	    /// </summary>
+	    public virtual int RawRow => currentRawRow;
 
-		public virtual int RawRow => currentRawRow;
-
+	    /// <summary>
+	    /// Gets the raw row for the current record that was parsed.
+	    /// </summary>
 	    public virtual string RawRecord => reader.RawRecord;
 
-	    public CsvParser( TextReader reader ) : this( reader, new CsvConfiguration() ) { }
+		/// <summary>
+		/// Creates a new parser using the given <see cref="TextReader" />.
+		/// </summary>
+		/// <param name="reader">The <see cref="TextReader" /> with the CSV file data.</param>
+		public CsvParser( TextReader reader ) : this( reader, new CsvConfiguration() ) { }
 
-	    public CsvParser( TextReader reader, CsvConfiguration configuration )
+		/// <summary>
+		/// Creates a new parser using the given <see cref="TextReader"/>
+		/// and <see cref="CsvConfiguration"/>.
+		/// </summary>
+		/// <param name="reader">The <see cref="TextReader"/> with the CSV file data.</param>
+		/// <param name="configuration">The configuration.</param>
+		public CsvParser( TextReader reader, CsvConfiguration configuration )
 	    {
 		    if( reader == null )
 		    {
@@ -50,7 +80,11 @@ namespace CsvHelper
 		    Configuration = configuration;
 	    }
 
-		public virtual string[] Read()
+	    /// <summary>
+	    /// Reads a record from the CSV file.
+	    /// </summary>
+	    /// <returns>A <see cref="T:String[]" /> of fields for the record read.</returns>
+	    public virtual string[] Read()
 		{
 			CheckDisposed();
 
