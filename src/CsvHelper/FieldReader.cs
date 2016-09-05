@@ -87,9 +87,9 @@ namespace CsvHelper
 				throw new CsvBadDataException( $"Field: '{field}'" );
 			}
 
-			if( IsFieldBad && Configuration.BadDataCallback != null )
+			if( IsFieldBad )
 			{
-				Configuration.BadDataCallback( field );
+				Configuration.BadDataCallback?.Invoke( field );
 			}
 
 			IsFieldBad = false;

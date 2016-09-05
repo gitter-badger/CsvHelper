@@ -222,6 +222,10 @@ namespace CsvHelper
 				    return;
 			    }
 
+				// If the buffer runs, it appends the current data to the field.
+				// We don't want to capture any data on a blank line, so we
+				// need to set the field start every char.
+			    reader.SetFieldStart();
 				c = reader.GetChar();
 		    }
 	    }
