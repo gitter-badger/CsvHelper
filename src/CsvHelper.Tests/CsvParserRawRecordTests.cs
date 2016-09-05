@@ -34,7 +34,7 @@ namespace CsvHelper.Tests
 				Assert.AreEqual( "3,4\r\n", parser.RawRecord );
 
 				parser.Read();
-				Assert.AreEqual( null, parser.RawRecord );
+				Assert.AreEqual( string.Empty, parser.RawRecord );
 			}
 		}
 
@@ -82,7 +82,7 @@ namespace CsvHelper.Tests
 				Assert.AreEqual( "3,4\n", parser.RawRecord );
 
 				parser.Read();
-				Assert.AreEqual( null, parser.RawRecord );
+				Assert.AreEqual( string.Empty, parser.RawRecord );
 			}
 		}
 
@@ -108,7 +108,7 @@ namespace CsvHelper.Tests
 				Assert.AreEqual( "3,4\r\n", parser.RawRecord );
 
 				parser.Read();
-				Assert.AreEqual( null, parser.RawRecord );
+				Assert.AreEqual( string.Empty, parser.RawRecord );
 			}
 		}
 	}

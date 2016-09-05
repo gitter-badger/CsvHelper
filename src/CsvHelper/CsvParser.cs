@@ -16,6 +16,7 @@ namespace CsvHelper
 	    private int currentRawRow;
 	    private int c = -1;
 	    private bool hasExcelSeparatorBeenRead;
+	    private int columnCount;
 
 		public virtual CsvConfiguration Configuration { get; }
 
@@ -63,6 +64,16 @@ namespace CsvHelper
 				reader.ClearRawRecord();
 
 				var row = ReadLine();
+
+				if( Configuration.DetectColumnCountChanges && row != null )
+				{
+					if( columnCount > 0 && columnCount != row.Length )
+					{
+						throw new CsvBadDataException( "An inconsistent number of columns has been detected." );
+					}
+
+					columnCount = row.Length;
+				}
 
 				return row;
 			}
@@ -118,6 +129,10 @@ namespace CsvHelper
 			}
 		}
 
+		/// <summary>
+		/// Reads a line of the CSV file.
+		/// </summary>
+		/// <returns>The CSV line.</returns>
 	    protected virtual string[] ReadLine()
 	    {
 		    record.Clear();
@@ -141,6 +156,16 @@ namespace CsvHelper
 
 					return null;
 			    }
+
+				if( Configuration.UseExcelLeadingZerosFormatForNumerics )
+				{
+					if( ReadExcelLeadingZerosField() )
+					{
+						break;
+					}
+
+					continue;
+				}
 
 			    if( record.Length == 0 && ( ( c == Configuration.Comment && Configuration.AllowComments ) || c == '\r' || c == '\n' ) )
 			    {
@@ -216,11 +241,12 @@ namespace CsvHelper
 			{
 				if( c == Configuration.Delimiter[0] )
 				{
+					reader.SetFieldEnd( -1 );
+
 					// End of field.
 					if( ReadDelimiter() )
 					{
 						// Set the end of the field to the char before the delimiter.
-						reader.SetFieldEnd( -1 );
 						record.Add( reader.GetField() );
 						return false;
 					}
@@ -298,10 +324,11 @@ namespace CsvHelper
 				{
 					if( c == Configuration.Delimiter[0] )
 					{
+						reader.SetFieldEnd( -1 );
+
 						if( ReadDelimiter() )
 						{
 							// Add an extra offset because of the end quote.
-							reader.SetFieldEnd( -1 );
 							record.Add( reader.GetField() );
 							return false;
 						}
@@ -325,6 +352,34 @@ namespace CsvHelper
 		}
 
 		/// <summary>
+		/// Reads the field using Excel leading zero compatibility.
+		/// i.e. Fields that start with `=`.
+		/// </summary>
+		/// <returns></returns>
+	    protected virtual bool ReadExcelLeadingZerosField()
+	    {
+			if( c == '=' )
+			{
+				c = reader.GetChar();
+				if( c == Configuration.Quote && !Configuration.IgnoreQuotes )
+				{
+					// This is a valid Excel formula.
+					return ReadQuotedField();
+				}
+			}
+
+			// The format is invalid.
+			// Excel isn't consistent, so just read as normal.
+
+			if( c == Configuration.Quote && !Configuration.IgnoreQuotes )
+			{
+				return ReadQuotedField();
+			}
+
+			return ReadField();
+	    }
+
+	    /// <summary>
 		/// Reads until the delimeter is done.
 		/// </summary>
 		/// <returns>True if a delimiter was read. False if the sequence of
