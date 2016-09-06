@@ -48,10 +48,7 @@ namespace CsvHelper
 		/// <summary>
 		/// Gets the configuration.
 		/// </summary>
-		public virtual CsvConfiguration Configuration
-		{
-			get { return configuration; }
-		}
+		public virtual CsvConfiguration Configuration => configuration;
 
 		/// <summary>
 		/// Gets the parser.
@@ -77,24 +74,12 @@ namespace CsvHelper
 		/// <summary>
 		/// Get the current record;
 		/// </summary>
-		public virtual string[] CurrentRecord
-		{
-			get
-			{
-				return currentRecord;
-			}
-		}
+		public virtual string[] CurrentRecord => currentRecord;
 
 		/// <summary>
 		/// Gets the current row.
 		/// </summary>
-		public int Row
-		{
-			get
-			{
-				return parser.Row;
-			}
-		}
+		public int Row => parser.Row;
 
 		/// <summary>
 		/// Creates a new CSV reader using the given <see cref="TextReader"/> and
