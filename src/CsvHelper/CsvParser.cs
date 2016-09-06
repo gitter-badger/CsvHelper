@@ -20,11 +20,12 @@ namespace CsvHelper
 	    private int c = -1;
 	    private bool hasExcelSeparatorBeenRead;
 	    private int columnCount;
+		private readonly CsvConfiguration configuration;
 
-	    /// <summary>
-	    /// Gets the configuration.
-	    /// </summary>
-	    public virtual CsvConfiguration Configuration { get; }
+		/// <summary>
+		/// Gets the configuration.
+		/// </summary>
+		public virtual CsvConfiguration Configuration => configuration;
 
 		/// <summary>
 		/// Gets the character position that the parser is currently on.
@@ -77,7 +78,7 @@ namespace CsvHelper
 		    }
 
 		    this.reader = new FieldReader( reader, configuration );
-		    Configuration = configuration;
+		    this.configuration = configuration;
 	    }
 
 	    /// <summary>
@@ -86,11 +87,9 @@ namespace CsvHelper
 	    /// <returns>A <see cref="T:String[]" /> of fields for the record read.</returns>
 	    public virtual string[] Read()
 		{
-			CheckDisposed();
-
 			try
 			{
-				if( Configuration.HasExcelSeparator && !hasExcelSeparatorBeenRead )
+				if( configuration.HasExcelSeparator && !hasExcelSeparatorBeenRead )
 				{
 					ReadExcelSeparator();
 				}
@@ -99,7 +98,7 @@ namespace CsvHelper
 
 				var row = ReadLine();
 
-				if( Configuration.DetectColumnCountChanges && row != null )
+				if( configuration.DetectColumnCountChanges && row != null )
 				{
 					if( columnCount > 0 && columnCount != row.Length )
 					{
@@ -141,26 +140,11 @@ namespace CsvHelper
 
 			if( disposing )
 			{
-				if( reader != null )
-				{
-					reader.Dispose();
-				}
+				reader?.Dispose();
 			}
 
 			disposed = true;
 			reader = null;
-		}
-
-		/// <summary>
-		/// Checks if the instance has been disposed of.
-		/// </summary>
-		/// <exception cref="ObjectDisposedException" />
-		protected virtual void CheckDisposed()
-		{
-			if( disposed )
-			{
-				throw new ObjectDisposedException( GetType().ToString() );
-			}
 		}
 
 		/// <summary>
@@ -191,7 +175,7 @@ namespace CsvHelper
 					return null;
 			    }
 
-				if( Configuration.UseExcelLeadingZerosFormatForNumerics )
+				if( configuration.UseExcelLeadingZerosFormatForNumerics )
 				{
 					if( ReadExcelLeadingZerosField() )
 					{
@@ -201,10 +185,10 @@ namespace CsvHelper
 					continue;
 				}
 
-			    if( record.Length == 0 && ( ( c == Configuration.Comment && Configuration.AllowComments ) || c == '\r' || c == '\n' ) )
+			    if( record.Length == 0 && ( ( c == configuration.Comment && configuration.AllowComments ) || c == '\r' || c == '\n' ) )
 			    {
 				    ReadBlankLine();
-				    if( !Configuration.IgnoreBlankLines )
+				    if( !configuration.IgnoreBlankLines )
 				    {
 						break;
 				    }
@@ -212,7 +196,7 @@ namespace CsvHelper
 				    continue;
 			    }
 
-				if( c == Configuration.Quote && !Configuration.IgnoreQuotes )
+				if( c == configuration.Quote && !configuration.IgnoreQuotes )
 			    {
 				    if( ReadQuotedField() )
 				    {
@@ -237,7 +221,7 @@ namespace CsvHelper
 		/// </summary>
 	    protected virtual void ReadBlankLine()
 	    {
-			if( Configuration.IgnoreBlankLines )
+			if( configuration.IgnoreBlankLines )
 			{
 				currentRow++;
 			}
@@ -270,19 +254,19 @@ namespace CsvHelper
 		/// <returns>True if the end of the line was found, otherwise false.</returns>
 	    protected virtual bool ReadField()
 		{
-			if( c != Configuration.Delimiter[0] && c != '\r' && c != '\n' )
+			if( c != configuration.Delimiter[0] && c != '\r' && c != '\n' )
 			{
 				c = reader.GetChar();
 			}
 
 			while( true )
 			{
-				if( c == Configuration.Quote )
+				if( c == configuration.Quote )
 				{
 					reader.IsFieldBad = true;
 				}
 
-				if( c == Configuration.Delimiter[0] )
+				if( c == configuration.Delimiter[0] )
 				{
 					reader.SetFieldEnd( -1 );
 
@@ -327,15 +311,14 @@ namespace CsvHelper
 			var inQuotes = true;
 			// Set the start of the field to after the quote.
 			reader.SetFieldStart();
-			int cPrev;
 
 			while( true )
 			{
 				// 1,"2" ,3
 
-				cPrev = c;
+				var cPrev = c;
 				c = reader.GetChar();
-				if( c == Configuration.Quote )
+				if( c == configuration.Quote )
 				{
 					inQuotes = !inQuotes;
 
@@ -368,7 +351,7 @@ namespace CsvHelper
 
 				if( !inQuotes )
 				{
-					if( c == Configuration.Delimiter[0] )
+					if( c == configuration.Delimiter[0] )
 					{
 						reader.SetFieldEnd( -1 );
 
@@ -388,7 +371,7 @@ namespace CsvHelper
 						reader.SetFieldStart( offset );
 						return true;
 					}
-					else if( cPrev == Configuration.Quote )
+					else if( cPrev == configuration.Quote )
 					{
 						// We're out of quotes. Read the reset of
 						// the field like a normal field.
@@ -408,7 +391,7 @@ namespace CsvHelper
 			if( c == '=' )
 			{
 				c = reader.GetChar();
-				if( c == Configuration.Quote && !Configuration.IgnoreQuotes )
+				if( c == configuration.Quote && !configuration.IgnoreQuotes )
 				{
 					// This is a valid Excel formula.
 					return ReadQuotedField();
@@ -418,7 +401,7 @@ namespace CsvHelper
 			// The format is invalid.
 			// Excel isn't consistent, so just read as normal.
 
-			if( c == Configuration.Quote && !Configuration.IgnoreQuotes )
+			if( c == configuration.Quote && !configuration.IgnoreQuotes )
 			{
 				return ReadQuotedField();
 			}
@@ -433,20 +416,20 @@ namespace CsvHelper
 		/// chars ended up not being the delimiter.</returns>
 	    protected virtual bool ReadDelimiter()
 	    {
-			if( c != Configuration.Delimiter[0] )
+			if( c != configuration.Delimiter[0] )
 			{
 				throw new InvalidOperationException( "Tried reading a delimiter when the first delimiter char didn't match the current char." );
 			}
 
-			if( Configuration.Delimiter.Length == 1 )
+			if( configuration.Delimiter.Length == 1 )
 			{
 				return true;
 			}
 
-			for( var i = 1; i < Configuration.Delimiter.Length; i++ )
+			for( var i = 1; i < configuration.Delimiter.Length; i++ )
 			{
 				c = reader.GetChar();
-				if( c != Configuration.Delimiter[i] )
+				if( c != configuration.Delimiter[i] )
 				{
 					return false;
 				}
@@ -462,7 +445,6 @@ namespace CsvHelper
 	    protected virtual int ReadLineEnding()
 		{
 			var fieldStartOffset = 0;
-			// TODO: Returning the bool might be pointless now. Check on this.
 		    if( c == '\r' )
 		    {
 				c = reader.GetChar();
@@ -485,7 +467,7 @@ namespace CsvHelper
 			var sepLine = reader.Reader.ReadLine();
 			if( sepLine != null )
 			{
-				Configuration.Delimiter = sepLine.Substring( 4 );
+				configuration.Delimiter = sepLine.Substring( 4 );
 			}
 
 			hasExcelSeparatorBeenRead = true;

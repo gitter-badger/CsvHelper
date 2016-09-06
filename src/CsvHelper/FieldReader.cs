@@ -19,38 +19,48 @@ namespace CsvHelper
 	    private int rawRecordEndPosition;
 	    private int charsRead;
 	    private bool disposed;
+		private readonly CsvConfiguration configuration;
+		private long charPosition;
+		private long bytePosition;
+		private string rawRecord;
+		private TextReader reader;
+		private bool isFieldBad;
 
 		/// <summary>
 		/// Gets the character position.
 		/// </summary>
-		public long CharPosition { get; protected set; }
+		public long CharPosition => charPosition;
 
 		/// <summary>
 		/// Gets the byte position.
 		/// </summary>
-		public long BytePosition { get; protected set; }
+		public long BytePosition => bytePosition;
 
 		/// <summary>
 		/// Gets all the characters of the record including
 		/// quotes, delimeters, and line endings.
 		/// </summary>
-		public string RawRecord { get; private set; }
+		public string RawRecord => rawRecord;
 
 		/// <summary>
 		/// Gets the <see cref="TextReader"/> that is read from.
 		/// </summary>
-	    public TextReader Reader { get; private set; }
+		public TextReader Reader => reader;
 
 		/// <summary>
 		/// Gets the configuration.
 		/// </summary>
-	    public CsvConfiguration Configuration { get; }
+		public CsvConfiguration Configuration => configuration;
 
 		/// <summary>
 		/// Gets or sets a value indicating if the field is bad.
 		/// True if the field is bad, otherwise false.
 		/// </summary>
-		public bool IsFieldBad { get; set; }
+		public bool IsFieldBad
+		{
+			get { return isFieldBad; }
+			set { isFieldBad = value; }
+		}
 
 		/// <summary>
 		/// Creates a new <see cref="FieldReader"/> using the given
@@ -60,9 +70,9 @@ namespace CsvHelper
 		/// <param name="configuration"></param>
 	    public FieldReader( TextReader reader, CsvConfiguration configuration )
 	    {
-			Reader = reader;
+			this.reader = reader;
 		    buffer = new char[configuration.BufferSize];
-		    Configuration = configuration;
+		    this.configuration = configuration;
 	    }
 
 		/// <summary>
@@ -71,16 +81,14 @@ namespace CsvHelper
 		/// <returns></returns>
 	    public virtual int GetChar()
 	    {
-		    CheckDisposed();
-
 		    if( bufferPosition >= charsRead )
 		    {
-				if( Configuration.CountBytes )
+				if( configuration.CountBytes )
 				{
-					BytePosition += Configuration.Encoding.GetByteCount( buffer, rawRecordStartPosition, rawRecordEndPosition - rawRecordStartPosition );
+					bytePosition += configuration.Encoding.GetByteCount( buffer, rawRecordStartPosition, rawRecordEndPosition - rawRecordStartPosition );
 				}
 
-				RawRecord += new string( buffer, rawRecordStartPosition, bufferPosition - rawRecordStartPosition );
+				rawRecord += new string( buffer, rawRecordStartPosition, bufferPosition - rawRecordStartPosition );
 				rawRecordStartPosition = 0;
 
 			    if( fieldEndPosition <= fieldStartPosition )
@@ -106,7 +114,7 @@ namespace CsvHelper
 		    bufferPosition++;
 		    rawRecordEndPosition = bufferPosition;
 
-		    CharPosition++;
+		    charPosition++;
 
 		    return c;
 	    }
@@ -119,17 +127,17 @@ namespace CsvHelper
 	    {
 		    AppendField();
 
-			if( IsFieldBad && Configuration.ThrowOnBadData )
+			if( isFieldBad && configuration.ThrowOnBadData )
 			{
 				throw new CsvBadDataException( $"Field: '{field}'" );
 			}
 
-			if( IsFieldBad )
+			if( isFieldBad )
 			{
-				Configuration.BadDataCallback?.Invoke( field );
+				configuration.BadDataCallback?.Invoke( field );
 			}
 
-			IsFieldBad = false;
+			isFieldBad = false;
 
 			var result = field;
 		    field = string.Empty;
@@ -142,12 +150,12 @@ namespace CsvHelper
 		/// </summary>
 	    public virtual void AppendField()
 	    {
-			if( Configuration.CountBytes )
+			if( configuration.CountBytes )
 			{
-				BytePosition += Configuration.Encoding.GetByteCount( buffer, rawRecordStartPosition, bufferPosition - rawRecordStartPosition );
+				bytePosition += configuration.Encoding.GetByteCount( buffer, rawRecordStartPosition, bufferPosition - rawRecordStartPosition );
 			}
 
-		    RawRecord += new string( buffer, rawRecordStartPosition, rawRecordEndPosition - rawRecordStartPosition );
+		    rawRecord += new string( buffer, rawRecordStartPosition, rawRecordEndPosition - rawRecordStartPosition );
 		    rawRecordStartPosition = rawRecordEndPosition;
 
 			var length = fieldEndPosition - fieldStartPosition;
@@ -203,7 +211,7 @@ namespace CsvHelper
 		/// </summary>
 	    public virtual void ClearRawRecord()
 	    {
-			RawRecord = string.Empty;
+			rawRecord = string.Empty;
 		}
 
 		/// <summary>
@@ -229,26 +237,11 @@ namespace CsvHelper
 
 			if( disposing )
 			{
-				if( Reader != null )
-				{
-					Reader.Dispose();
-				}
+				Reader?.Dispose();
 			}
 
 			disposed = true;
-			Reader = null;
-		}
-
-		/// <summary>
-		/// Checks if the instance has been disposed of.
-		/// </summary>
-		/// <exception cref="ObjectDisposedException" />
-		protected virtual void CheckDisposed()
-		{
-			if( disposed )
-			{
-				throw new ObjectDisposedException( GetType().ToString() );
-			}
+			reader = null;
 		}
 	}
 }

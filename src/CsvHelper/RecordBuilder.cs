@@ -10,6 +10,7 @@ namespace CsvHelper
 	    private const int DEFAULT_CAPACITY = 16;
 	    private string[] record;
 	    private int position;
+		private int capacity;
 
 		/// <summary>
 		/// The number of records.
@@ -19,7 +20,7 @@ namespace CsvHelper
 		/// <summary>
 		/// The total record capacity.
 		/// </summary>
-	    public int Capacity { get; protected set; }
+		public int Capacity => capacity;
 
 		/// <summary>
 		/// Creates a new <see cref="RecordBuilder"/> using defaults.
@@ -32,9 +33,9 @@ namespace CsvHelper
 		/// <param name="capacity">The initial capacity.</param>
 	    public RecordBuilder( int capacity )
 	    {
-		    Capacity = capacity > 0 ? capacity : DEFAULT_CAPACITY;
+		    this.capacity = capacity > 0 ? capacity : DEFAULT_CAPACITY;
 
-		    record = new string[Capacity];
+		    record = new string[capacity];
 	    }
 
 		/// <summary>
@@ -46,8 +47,8 @@ namespace CsvHelper
 	    {
 			if( position == record.Length )
 			{
-				Capacity = Capacity * 2;
-				Array.Resize( ref record, Capacity );
+				capacity = capacity * 2;
+				Array.Resize( ref record, capacity );
 			}
 
 			record[position] = field;

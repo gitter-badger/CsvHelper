@@ -56,10 +56,7 @@ namespace CsvHelper
 		/// <summary>
 		/// Gets the parser.
 		/// </summary>
-		public virtual ICsvParser Parser
-		{
-			get { return parser; }
-		}
+		public virtual ICsvParser Parser => parser;
 
 		/// <summary>
 		/// Gets the field headers.
@@ -68,8 +65,6 @@ namespace CsvHelper
 		{
 			get
 			{
-				CheckDisposed();
-
 				if( headerRecord == null )
 				{
 					throw new CsvReaderException( "You must call ReadHeader or Read before accessing the field headers." );
@@ -86,8 +81,6 @@ namespace CsvHelper
 		{
 			get
 			{
-				CheckDisposed();
-
 				return currentRecord;
 			}
 		}
@@ -99,8 +92,6 @@ namespace CsvHelper
 		{
 			get
 			{
-				CheckDisposed();
-
 				return parser.Row;
 			}
 		}
@@ -122,12 +113,12 @@ namespace CsvHelper
 		{
 			if( reader == null )
 			{
-				throw new ArgumentNullException( "reader" );
+				throw new ArgumentNullException( nameof( reader ) );
 			}
 
 			if( configuration == null )
 			{
-				throw new ArgumentNullException( "configuration" );
+				throw new ArgumentNullException( nameof( configuration ) );
 			}
 
 			parser = new CsvParser( reader, configuration );
@@ -142,7 +133,7 @@ namespace CsvHelper
 		{
 			if( parser == null )
 			{
-				throw new ArgumentNullException( "parser" );
+				throw new ArgumentNullException( nameof( parser ) );
 			}
 
 			if( parser.Configuration == null )
@@ -160,8 +151,6 @@ namespace CsvHelper
 		/// <returns>True if there are more records, otherwise false.</returns>
 		public virtual bool ReadHeader()
 		{
-			CheckDisposed();
-
 			if( doneReading )
 			{
 				throw new CsvReaderException( DoneReadingExceptionMessage );
@@ -198,8 +187,6 @@ namespace CsvHelper
 		/// <returns>True if there are more records, otherwise false.</returns>
 		public virtual bool Read()
 		{
-			CheckDisposed();
-
 			if( doneReading )
 			{
 				throw new CsvReaderException( DoneReadingExceptionMessage );
@@ -236,7 +223,6 @@ namespace CsvHelper
 		{
 			get
 			{
-				CheckDisposed();
 				CheckHasBeenRead();
 
 				return GetField( index );
@@ -252,7 +238,6 @@ namespace CsvHelper
 		{
 			get
 			{
-				CheckDisposed();
 				CheckHasBeenRead();
 
 				return GetField( name );
@@ -269,7 +254,6 @@ namespace CsvHelper
 		{
 			get 
 			{
-				CheckDisposed();
 				CheckHasBeenRead();
 
 				return GetField( name, index );
@@ -283,7 +267,6 @@ namespace CsvHelper
 		/// <returns>The raw field.</returns>
 		public virtual string GetField( int index )
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			// Set the current index being used so we
@@ -304,9 +287,9 @@ namespace CsvHelper
 			}
 
 			var field = currentRecord[index];
-			if( configuration.TrimFields && field != null )
+			if( configuration.TrimFields )
 			{
-				field = field.Trim();
+				field = field?.Trim();
 			}
 
 			return field;
@@ -319,7 +302,6 @@ namespace CsvHelper
 		/// <returns>The raw field.</returns>
 		public virtual string GetField( string name )
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			var index = GetFieldIndex( name );
@@ -341,7 +323,6 @@ namespace CsvHelper
 		/// <returns>The raw field.</returns>
 		public virtual string GetField( string name, int index )
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			var fieldIndex = GetFieldIndex( name, index );
@@ -362,7 +343,6 @@ namespace CsvHelper
 		/// <returns>The field converted to <see cref="Object"/>.</returns>
 		public virtual object GetField( Type type, int index )
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			var converter = TypeConverterFactory.GetConverter( type );
@@ -378,7 +358,6 @@ namespace CsvHelper
 		/// <returns>The field converted to <see cref="Object"/>.</returns>
 		public virtual object GetField( Type type, string name )
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			var converter = TypeConverterFactory.GetConverter( type );
@@ -395,7 +374,6 @@ namespace CsvHelper
 		/// <returns>The field converted to <see cref="Object"/>.</returns>
 		public virtual object GetField( Type type, string name, int index )
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			var converter = TypeConverterFactory.GetConverter( type );
@@ -412,7 +390,6 @@ namespace CsvHelper
 		/// <returns>The field converted to <see cref="Object"/>.</returns>
 		public virtual object GetField( Type type, int index, ITypeConverter converter )
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			var propertyMapData = new CsvPropertyMapData( null )
@@ -437,7 +414,6 @@ namespace CsvHelper
 		/// <returns>The field converted to <see cref="Object"/>.</returns>
 		public virtual object GetField( Type type, string name, ITypeConverter converter )
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			var index = GetFieldIndex( name );
@@ -455,7 +431,6 @@ namespace CsvHelper
 		/// <returns>The field converted to <see cref="Object"/>.</returns>
 		public virtual object GetField( Type type, string name, int index, ITypeConverter converter )
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			var fieldIndex = GetFieldIndex( name, index );
@@ -470,7 +445,6 @@ namespace CsvHelper
 		/// <returns>The field converted to <see cref="System.Type"/> T.</returns>
 		public virtual T GetField<T>( int index )
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			var converter = TypeConverterFactory.GetConverter<T>();
@@ -485,7 +459,6 @@ namespace CsvHelper
 		/// <returns>The field converted to <see cref="System.Type"/> T.</returns>
 		public virtual T GetField<T>( string name )
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			var converter = TypeConverterFactory.GetConverter<T>();
@@ -503,7 +476,6 @@ namespace CsvHelper
 		/// <returns></returns>
 		public virtual T GetField<T>( string name, int index )
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			var converter = TypeConverterFactory.GetConverter<T>();
@@ -520,14 +492,13 @@ namespace CsvHelper
 		/// <returns>The field converted to <see cref="System.Type"/> T.</returns>
 		public virtual T GetField<T>( int index, ITypeConverter converter )
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			if( index >= currentRecord.Length || index < 0 )
 			{
 				if( configuration.WillThrowOnMissingField )
 				{
-					var ex = new CsvMissingFieldException( string.Format( "Field at index '{0}' does not exist.", index ) );
+					var ex = new CsvMissingFieldException( $"Field at index '{index}' does not exist." );
 					ExceptionHelper.AddExceptionDataMessage( ex, Parser, typeof( T ), namedIndexes, index, currentRecord );
 					throw ex;
 				}
@@ -548,7 +519,6 @@ namespace CsvHelper
 		/// <returns>The field converted to <see cref="System.Type"/> T.</returns>
 		public virtual T GetField<T>( string name, ITypeConverter converter )
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			var index = GetFieldIndex( name );
@@ -567,7 +537,6 @@ namespace CsvHelper
 		/// <returns>The field converted to <see cref="System.Type"/> T.</returns>
 		public virtual T GetField<T>( string name, int index, ITypeConverter converter )
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			var fieldIndex = GetFieldIndex( name, index );
@@ -584,7 +553,6 @@ namespace CsvHelper
 		/// <returns>The field converted to <see cref="System.Type"/> T.</returns>
 		public virtual T GetField<T, TConverter>( int index ) where TConverter : ITypeConverter
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			var converter = ReflectionHelper.CreateInstance<TConverter>();
@@ -601,7 +569,6 @@ namespace CsvHelper
 		/// <returns>The field converted to <see cref="System.Type"/> T.</returns>
 		public virtual T GetField<T, TConverter>( string name ) where TConverter : ITypeConverter
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			var converter = ReflectionHelper.CreateInstance<TConverter>();
@@ -620,7 +587,6 @@ namespace CsvHelper
 		/// <returns>The field converted to <see cref="System.Type"/> T.</returns>
 		public virtual T GetField<T, TConverter>( string name, int index ) where TConverter : ITypeConverter
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			var converter = ReflectionHelper.CreateInstance<TConverter>();
@@ -636,7 +602,6 @@ namespace CsvHelper
 		/// <returns>A value indicating if the get was successful.</returns>
 		public virtual bool TryGetField<T>( int index, out T field )
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			var converter = TypeConverterFactory.GetConverter<T>();
@@ -652,7 +617,6 @@ namespace CsvHelper
 		/// <returns>A value indicating if the get was successful.</returns>
 		public virtual bool TryGetField<T>( string name, out T field )
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			var converter = TypeConverterFactory.GetConverter<T>();
@@ -671,7 +635,6 @@ namespace CsvHelper
 		/// <returns>A value indicating if the get was successful.</returns>
 		public virtual bool TryGetField<T>( string name, int index, out T field )
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			var converter = TypeConverterFactory.GetConverter<T>();
@@ -689,7 +652,6 @@ namespace CsvHelper
 		/// <returns>A value indicating if the get was successful.</returns>
 		public virtual bool TryGetField<T>( int index, ITypeConverter converter, out T field )
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			// DateTimeConverter.ConvertFrom will successfully convert
@@ -730,7 +692,6 @@ namespace CsvHelper
 		/// <returns>A value indicating if the get was successful.</returns>
 		public virtual bool TryGetField<T>( string name, ITypeConverter converter, out T field )
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			var index = GetFieldIndex( name, isTryGet: true );
@@ -755,7 +716,6 @@ namespace CsvHelper
 		/// <returns>A value indicating if the get was successful.</returns>
 		public virtual bool TryGetField<T>( string name, int index, ITypeConverter converter, out T field )
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			var fieldIndex = GetFieldIndex( name, index, true );
@@ -779,7 +739,6 @@ namespace CsvHelper
 		/// <returns>A value indicating if the get was successful.</returns>
 		public virtual bool TryGetField<T, TConverter>( int index, out T field ) where TConverter : ITypeConverter
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			var converter = ReflectionHelper.CreateInstance<TConverter>();
@@ -797,7 +756,6 @@ namespace CsvHelper
 		/// <returns>A value indicating if the get was successful.</returns>
 		public virtual bool TryGetField<T, TConverter>( string name, out T field ) where TConverter : ITypeConverter
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			var converter = ReflectionHelper.CreateInstance<TConverter>();
@@ -816,7 +774,6 @@ namespace CsvHelper
 		/// <returns>A value indicating if the get was successful.</returns>
 		public virtual bool TryGetField<T, TConverter>( string name, int index, out T field ) where TConverter : ITypeConverter
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			var converter = ReflectionHelper.CreateInstance<TConverter>();
@@ -832,7 +789,6 @@ namespace CsvHelper
 		/// </returns>
 		public virtual bool IsRecordEmpty()
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			return IsRecordEmpty( true );
@@ -847,7 +803,6 @@ namespace CsvHelper
 		/// <returns>The record converted to <see cref="System.Type"/> T.</returns>
 		public virtual T GetRecord<T>() 
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			T record;
@@ -870,7 +825,6 @@ namespace CsvHelper
 		/// <returns>The record.</returns>
 		public virtual object GetRecord( Type type )
 		{
-			CheckDisposed();
 			CheckHasBeenRead();
 
 			object record;
@@ -896,7 +850,6 @@ namespace CsvHelper
 		/// <returns>An <see cref="IList{T}" /> of records.</returns>
 		public virtual IEnumerable<T> GetRecords<T>() 
 		{
-			CheckDisposed();
 			// Don't need to check if it's been read
 			// since we're doing the reading ourselves.
 
@@ -914,10 +867,7 @@ namespace CsvHelper
 					if( configuration.IgnoreReadingExceptions )
 					{
 #if !NET_2_0
-						if( configuration.ReadingExceptionCallback != null )
-						{
-							configuration.ReadingExceptionCallback( ex, this );
-						}
+						configuration.ReadingExceptionCallback?.Invoke( ex, this );
 #endif
 
 						continue;
@@ -939,7 +889,6 @@ namespace CsvHelper
 		/// <returns>An <see cref="IList{Object}" /> of records.</returns>
 		public virtual IEnumerable<object> GetRecords( Type type )
 		{
-			CheckDisposed();
 			// Don't need to check if it's been read
 			// since we're doing the reading ourselves.
 
@@ -957,10 +906,7 @@ namespace CsvHelper
 					if( configuration.IgnoreReadingExceptions )
 					{
 #if !NET_2_0
-						if( configuration.ReadingExceptionCallback != null )
-						{
-							configuration.ReadingExceptionCallback( ex, this );
-						}
+						configuration.ReadingExceptionCallback?.Invoke( ex, this );
 #endif
 
 						continue;
@@ -982,8 +928,6 @@ namespace CsvHelper
 		/// </summary>
 		public virtual void ClearRecordCache<T>() 
 		{
-			CheckDisposed();
-
 			ClearRecordCache( typeof( T ) );
 		}
 
@@ -997,8 +941,6 @@ namespace CsvHelper
 		/// <param name="type">The type to invalidate.</param>
 		public virtual void ClearRecordCache( Type type )
 		{
-			CheckDisposed();
-
 			recordFuncs.Remove( type );
 		}
 
@@ -1011,8 +953,6 @@ namespace CsvHelper
 		/// </summary>
 		public virtual void ClearRecordCache()
 		{
-			CheckDisposed();
-
 			recordFuncs.Clear();
 		}
 
@@ -1041,26 +981,11 @@ namespace CsvHelper
 
 			if( disposing )
 			{
-				if( parser != null )
-				{
-					parser.Dispose();
-				}
+				parser?.Dispose();
 			}
 
 			disposed = true;
 			parser = null;
-		}
-
-		/// <summary>
-		/// Checks if the instance has been disposed of.
-		/// </summary>
-		/// <exception cref="ObjectDisposedException" />
-		protected virtual void CheckDisposed()
-		{
-			if( disposed )
-			{
-				throw new ObjectDisposedException( GetType().ToString() );
-			}
 		}
 
 		/// <summary>
@@ -1086,7 +1011,6 @@ namespace CsvHelper
 		/// </returns>
 		protected virtual bool IsRecordEmpty( bool checkHasBeenRead )
 		{
-			CheckDisposed();
 			if( checkHasBeenRead )
 			{
 				CheckHasBeenRead();
@@ -1146,7 +1070,7 @@ namespace CsvHelper
 		{
 			if( names == null )
 			{
-				throw new ArgumentNullException( "names" );
+				throw new ArgumentNullException( nameof( names ) );
 			}
 
 			if( !configuration.HasHeaderRecord )
@@ -1163,9 +1087,9 @@ namespace CsvHelper
 				{
 					namedIndex = Regex.Replace( namedIndex, "\\s", string.Empty );
 				}
-				else if( configuration.TrimHeaders && namedIndex != null )
+				else if( configuration.TrimHeaders )
 				{
-					namedIndex = namedIndex.Trim();
+					namedIndex = namedIndex?.Trim();
 				}
 
 				foreach( var n in names )
@@ -1183,8 +1107,8 @@ namespace CsvHelper
 				{
 					// If we're in strict reading mode and the
 					// named index isn't found, throw an exception.
-					var namesJoined = string.Format( "'{0}'", string.Join( "', '", names ) );
-					var ex = new CsvMissingFieldException( string.Format( "Fields {0} do not exist in the CSV file.", namesJoined ) );
+					var namesJoined = $"'{string.Join( "', '", names )}'";
+					var ex = new CsvMissingFieldException( $"Fields {namesJoined} do not exist in the CSV file." );
 					ExceptionHelper.AddExceptionDataMessage( ex, Parser, null, namedIndexes, currentIndex, currentRecord );
 					throw ex;
 				}
@@ -1230,8 +1154,6 @@ namespace CsvHelper
 		/// <returns><c>true</c> if the current record should be skipped, <c>false</c> otherwise.</returns>
 		protected virtual bool ShouldSkipRecord()
 		{
-			CheckDisposed();
-
 			if( currentRecord == null )
 			{
 				return false;
