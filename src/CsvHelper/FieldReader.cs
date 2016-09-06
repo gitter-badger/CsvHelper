@@ -11,7 +11,7 @@ namespace CsvHelper
     public class FieldReader : IDisposable
     {
 	    private readonly char[] buffer;
-	    private string field = string.Empty;
+		private StringBuilder field = new StringBuilder();
 	    private int bufferPosition;
 	    private int fieldStartPosition;
 	    private int fieldEndPosition;
@@ -22,7 +22,7 @@ namespace CsvHelper
 		private readonly CsvConfiguration configuration;
 		private long charPosition;
 		private long bytePosition;
-		private string rawRecord;
+		private StringBuilder rawRecord = new StringBuilder();
 		private TextReader reader;
 		private bool isFieldBad;
 
@@ -40,7 +40,7 @@ namespace CsvHelper
 		/// Gets all the characters of the record including
 		/// quotes, delimeters, and line endings.
 		/// </summary>
-		public string RawRecord => rawRecord;
+		public string RawRecord => rawRecord.ToString();
 
 		/// <summary>
 		/// Gets the <see cref="TextReader"/> that is read from.
@@ -88,7 +88,7 @@ namespace CsvHelper
 					bytePosition += configuration.Encoding.GetByteCount( buffer, rawRecordStartPosition, rawRecordEndPosition - rawRecordStartPosition );
 				}
 
-				rawRecord += new string( buffer, rawRecordStartPosition, bufferPosition - rawRecordStartPosition );
+			    rawRecord.Append( new string( buffer, rawRecordStartPosition, bufferPosition - rawRecordStartPosition ) );
 				rawRecordStartPosition = 0;
 
 			    if( fieldEndPosition <= fieldStartPosition )
@@ -97,7 +97,7 @@ namespace CsvHelper
 				    fieldEndPosition = bufferPosition;
 			    }
 
-				field += new string( buffer, fieldStartPosition, fieldEndPosition - fieldStartPosition );
+			    field.Append( new string( buffer, fieldStartPosition, fieldEndPosition - fieldStartPosition ) );
 				bufferPosition = 0;
 			    rawRecordEndPosition = 0;
 				fieldStartPosition = 0;
@@ -134,15 +134,19 @@ namespace CsvHelper
 
 			if( isFieldBad )
 			{
-				configuration.BadDataCallback?.Invoke( field );
+				configuration.BadDataCallback?.Invoke( field.ToString() );
 			}
 
 			isFieldBad = false;
 
-			var result = field;
-		    field = string.Empty;
+			var result = field.ToString();
+#if NET_2_0 || NET_3_5
+		    field = new StringBuilder();
+#else
+			field.Clear();
+#endif
 
-		    return result;
+			return result;
 	    }
 
 		/// <summary>
@@ -155,11 +159,11 @@ namespace CsvHelper
 				bytePosition += configuration.Encoding.GetByteCount( buffer, rawRecordStartPosition, bufferPosition - rawRecordStartPosition );
 			}
 
-		    rawRecord += new string( buffer, rawRecordStartPosition, rawRecordEndPosition - rawRecordStartPosition );
+			rawRecord.Append( new string( buffer, rawRecordStartPosition, rawRecordEndPosition - rawRecordStartPosition ) );
 		    rawRecordStartPosition = rawRecordEndPosition;
 
 			var length = fieldEndPosition - fieldStartPosition;
-			field += new string( buffer, fieldStartPosition, length );
+			field.Append( new string( buffer, fieldStartPosition, length ) );
 			fieldStartPosition = bufferPosition;
 		    fieldEndPosition = 0;
 	    }
@@ -210,8 +214,12 @@ namespace CsvHelper
 		/// Clears the raw record.
 		/// </summary>
 	    public virtual void ClearRawRecord()
-	    {
-			rawRecord = string.Empty;
+		{
+#if NET_2_0 || NET_3_5
+			rawRecord = new StringBuilder();
+#else
+			rawRecord.Clear();
+#endif
 		}
 
 		/// <summary>
